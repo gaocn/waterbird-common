@@ -28,8 +28,6 @@ import java.util.Date;
 /**
  * 打印日志
  *
- * @author mty
- * @time 2011-11-2下午06:23:29
  */
 public class LogReader extends Thread {
     public static final String TAG           = "LogReader";

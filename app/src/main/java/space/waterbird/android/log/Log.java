@@ -15,11 +15,15 @@
  */
 package space.waterbird.android.log;
 
+import android.os.SystemClock;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
 /**
  * the logger
  *
- * @author MaTianyu
- *         2014-1-1下午4:05:39
  */
 public final class Log {
 
@@ -147,4 +151,122 @@ public final class Log {
     public static int e(Object tag, String msg) {
         return isPrint ? android.util.Log.e(tag.getClass().getSimpleName(), msg) : -1;
     }
+
+    /**
+     * ******************************* format log  **********************************
+     */
+    public static int v(String Tag, String format, Object... msg) {
+        return isPrint ? android.util.Log.v(Tag, buildMessage(format, msg)) : -1;
+    }
+    public static int d(String Tag, String format, Object... msg) {
+        return isPrint ? android.util.Log.d(Tag, buildMessage(format, msg)) : -1;
+    }
+    public static int i(String Tag, String format, Object... msg) {
+        return isPrint ? android.util.Log.i(Tag, buildMessage(format, msg)) : -1;
+    }
+    public static int w(String Tag, String format, Object... msg) {
+        return isPrint ? android.util.Log.w(Tag, buildMessage(format, msg)) : -1;
+    }
+    public static int e(String Tag, String format, Object... msg) {
+        return isPrint ? android.util.Log.e(Tag, buildMessage(format, msg)) : -1;
+    }
+
+    /**
+     * Formats the caller's provided message and prepends useful info like
+     * calling thread ID and method name.
+     */
+    private static String buildMessage(String format, Object... args) {
+        String msg = (args == null) ? format : String.format(Locale.CHINA, format, args);
+
+        StackTraceElement[] trace = new Throwable().fillInStackTrace().getStackTrace();
+        String caller = "<unknown>";
+        /*
+            Walk up the stack looking for the first caller outside the Log
+            It will be at least two frames up, so start there
+         */
+        for(int i = 2; i < trace.length; i++) {
+            Class<?> clazz = trace[i].getClass();
+            if(!clazz.equals(Log.class)) {
+                String callingClass = trace[i].getClassName();
+                callingClass = callingClass.substring(callingClass.lastIndexOf('.') + 1);
+                callingClass = callingClass.substring(callingClass.lastIndexOf('$') + 1);
+
+                caller = callingClass + "." + trace[i].getMethodName();
+                break;
+            }
+        }
+        return String.format(Locale.CHINA, "[%d] %s: %s", Thread.currentThread().getId(), caller, msg);
+    }
+
+
+    static class MarkerLog {
+        /**  */
+        private static final long MIN_DURATION_FOR_LOGGING_MS = 0;
+        private static class Marker {
+            public final String name;
+            public final long thread;
+            public final long time;
+
+            public Marker(String name, long thread, long time) {
+                this.name = name;
+                this.thread = thread;
+                this.time = time;
+            }
+        }
+        private List<Marker> mMarkers = new ArrayList<>();
+        private boolean mFinished = false;
+
+        //add a marker to this log with specified name
+        public synchronized void add(String name, long threadId) {
+            if(mFinished) {
+                throw new IllegalStateException("Marker added to finished log");
+            }
+            mMarkers.add(new Marker(name, threadId, SystemClock.elapsedRealtime()));
+        }
+
+
+        /**
+         * close log , dumping it to logcat if the time difference between the first and last marker
+         * is greater the {@link #MIN_DURATION_FOR_LOGGING_MS}.
+         *
+         * @param header Header String to print Above the marker log
+         */
+        public synchronized void finish(String header, String tag) {
+            mFinished = true;
+
+            long duration = getTotalDuration();
+            if(duration <= MIN_DURATION_FOR_LOGGING_MS) {
+                return;
+            }
+
+            long preTime = mMarkers.get(0).time;
+            d(tag, "(%-4d ms) %s", duration, header);
+            for(Marker marker : mMarkers) {
+                long thisTime = marker.time;
+                d("(+%-4d) [%2d] %s", (thisTime - preTime), marker.thread, marker.name);
+                preTime = thisTime;
+            }
+        }
+        /** return the time difference between the first and last events in this log*/
+        private long getTotalDuration() {
+            if(mMarkers.size() == 0) {
+                return 0;
+            }
+            long first = mMarkers.get(0).time;
+            long last = mMarkers.get(mMarkers.size() - 1).time;
+            return last - first;
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
+            //catch requests that have been collected (and hence end-of-lifed)
+            //but had no debugging output printed for them
+            if(!mFinished) {
+                finish("Request on the loose", "");
+                e("", "Marker log finalized without finish() - uncaught exit point for request");
+
+            }
+        }
+    }
+
 }
