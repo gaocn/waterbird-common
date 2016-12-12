@@ -42,3 +42,8 @@ project.properties
 /local.properties
 /.idea
 /build
+libs/
+src/main/java/space/waterbird/android/view/
+src/main/res/drawable/
+src/androidTest/
+src/test/

@@ -1,1 +1,14 @@
 /build
+
+res/drawable
+res/layout
+res/mipmap-hdpi
+res/mipmap-mhdpi
+res/mipmap-xhdpi
+res/mipmap-xxhdpi
+res/mipmap-xxxhdpi
+
+res/values-w820dp
+res/values/dimens.xml
+
+java/space/waterbird/MainActivity
