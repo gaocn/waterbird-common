@@ -6,7 +6,16 @@ import android.content.Context;
 import android.os.Build;
 import android.text.format.Formatter;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import space.waterbird.android.log.Log;
+
+import static space.waterbird.android.log.Log.d;
 
 /**
  * Get memory info.
@@ -107,4 +116,44 @@ public class MemoryUtil {
         return Formatter.formatFileSize(context, mi.availMem);// 将获取的内存大小规格化
     }
 
+
+
+    /**
+     * 获取手机全部可用空间，只能在高版本的API上使用(Android4.00以上)，可能存在不兼容问题
+     * @param context
+     * @return
+     */
+    public static long getTotalMemWithHighAPI(Context context) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+        am.getMemoryInfo(memoryInfo);
+        return memoryInfo.totalMem;
+    }
+
+    /**
+     * 获取手机全部可用空间，解决兼容问题
+     * @param context
+     * @return
+     */
+    public static long getTotalMem(Context context) {
+        try {
+            File file = new File("/proc/meminfo");
+            FileInputStream fis = new FileInputStream(file);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+            String line = br.readLine();
+            StringBuilder sb = new StringBuilder();
+            for(char c : line.toCharArray()) {
+                if(c >= '0' && c <= '9')
+                    sb.append(c);
+            }
+            long totalMem = Long.parseLong(sb.toString()) * 1024;
+            d(TAG, "getTotalMem: 总内存" + Formatter.formatFileSize(context, totalMem));
+            return totalMem;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }
