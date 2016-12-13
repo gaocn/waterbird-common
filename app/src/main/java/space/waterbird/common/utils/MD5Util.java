@@ -1,12 +1,17 @@
 package space.waterbird.common.utils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import space.waterbird.android.log.Log;
+
 /**
- * MS5
+ * MD5
  */
 public class MD5Util {
     private static final String TAG                  = MD5Util.class.getSimpleName();
@@ -46,4 +51,44 @@ public class MD5Util {
 
         return digest;
     }
+    /**
+     * 获取文件的MD5值
+     * @param filePath
+     * @return
+     */
+    public static String getFileMD5(String filePath) {
+        try {
+            File file = new File(filePath);
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            FileInputStream fis = new FileInputStream(file);
+
+            byte[] buffer = new byte[1024];
+            int len = -1;
+            while((len = fis.read(buffer)) != -1) {
+                digest.update(buffer, 0, len);
+            }
+            byte[] result = digest.digest();
+            StringBuilder sb = new StringBuilder();
+            for(byte b : result) {
+                int number = b & 0xFF;
+                String numberStr = Integer.toHexString(number);
+                if(numberStr.length() == 1)
+                    sb.append("0");
+                sb.append(numberStr);
+            }
+            Log.d(TAG, "getFileMD5: 文件的MD5值为 " + sb.toString());
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+
+
+
 }
