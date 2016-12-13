@@ -9,8 +9,10 @@ import android.content.pm.PackageManager;
 
 import java.util.List;
 
-public class AppUtil {
+import static space.waterbird.android.log.Log.d;
 
+public class AppUtil {
+    private static final String TAG = "AppUtil";
     /**
      * 调用系统分享
      */
@@ -53,6 +55,20 @@ public class AppUtil {
             e.printStackTrace();
         }
         return packageInfo;
+    }
+
+    /**
+     * 获取正在运行进程数量
+     * PackageManager 相当于程序管理器，即控件面板中显示的安装软件，管理的是静态信息
+     * ActivityManager 管理手机中运行的应用程序信息，管理的是动态信息
+     * @param context
+     * @return
+     */
+    public static int getRunningProcessCount(Context context) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        int count = am.getRunningAppProcesses().size();
+        d(TAG, "getRunningProcessCount: 运行进程数量" + count);
+        return count;
     }
 
 }
