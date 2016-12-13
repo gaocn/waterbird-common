@@ -14,8 +14,6 @@ import space.waterbird.android.log.Log;
 
 /**
  * 异步执行
- *
- * @author MaTianyu
  */
 public class AsyncExecutor {
     private static final String TAG = AsyncExecutor.class.getSimpleName();
